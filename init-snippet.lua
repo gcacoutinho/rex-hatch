@@ -12,4 +12,3 @@ rex.action({
     ]] }, { detach = true })
   end,
 })
-rex.bind("ctrl+b>f", "hatch_session_in")
