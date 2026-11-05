@@ -48,8 +48,18 @@ if (( ${#roots} == 0 )); then
     exit 1
 fi
 
-label=$(find "${roots[@]}" -mindepth 1 -maxdepth 1 -type d -not -name '.*' |
-    sed "s|^$HOME|~|" | sort | fzf --prompt 'Project: ') || exit 0
+# Finish discovery first so its failures cannot be mistaken for cancellation.
+projects=$(find "${roots[@]}" -mindepth 1 -maxdepth 1 -type d -not -name '.*' |
+    sed "s|^$HOME|~|" | sort) || exit $?
+if label=$(printf '%s\n' "$projects" | fzf --prompt 'Project: '); then
+    :
+else
+    picker_status=$?
+    case "$picker_status" in
+        1|130) exit 0 ;; # No match or Escape/Control-C.
+        *) exit "$picker_status" ;;
+    esac
+fi
 [[ -n "$label" ]] || exit 0
 dir="$HOME${label#\~}"
 # Explicit roots outside HOME remain absolute paths.
