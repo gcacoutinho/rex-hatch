@@ -96,7 +96,7 @@ Direct invocations create a new session rather than reusing one.
 
 `PROJECT_PICKER` at the top of `pick-project.sh` sets the preferred picker: `fzf` (default) or `finder`. You can also set it in the environment, e.g. `PROJECT_PICKER=finder ~/.config/rex/pick-project.sh`. If fzf is unavailable, Hatch automatically falls back to Finder's folder dialog, which can choose any folder regardless of configured project roots.
 
-Hatch Project launches the picker from a floating terminal pane; with fzf, Enter opens the project and Escape cancels. Canceling Finder also exits without creating a session. zsh loads `FZF_DEFAULT_OPTS` from `.zshenv`. The picker scans immediate, non-hidden subfolders of `~/Projects/personal` and `~/Projects/work`, falling back to `~/projects` when neither exists. Pass custom roots when running directly:
+Hatch Project launches the picker from a floating terminal pane; with fzf, Enter opens the project and Escape cancels. Canceling Finder also exits without creating a session. zsh loads `FZF_DEFAULT_OPTS` from `.zshenv`. The picker uses your home directory (`~` / `$HOME`) as its default base, scanning its immediate, non-hidden subfolders. Pass custom roots when running directly:
 
 ```sh
 ~/.config/rex/pick-project.sh ~/code ~/work

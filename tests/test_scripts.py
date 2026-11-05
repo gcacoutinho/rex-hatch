@@ -98,7 +98,7 @@ class ScriptsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(calls[0][2], 'fallback')
 
-    def picker(self, fzf_status=0, find_status=0, existing=False):
+    def picker(self, fzf_status=0, find_status=0, existing=False, roots=None):
         bin_dir = self.home / 'bin'
         bin_dir.mkdir(exist_ok=True)
         mocks = {
@@ -115,7 +115,8 @@ class ScriptsTest(unittest.TestCase):
                    PROJECT_PICKER='fzf', FZF_STATUS=str(fzf_status),
                    FIND_STATUS=str(find_status), CALL_LOG=str(log),
                    PROJECT_LABEL='~/project', EXISTING=str(int(existing)))
-        result = subprocess.run(['zsh', str(ROOT / 'pick-project.sh'), str(self.home)],
+        args = [] if roots is None else [str(root) for root in roots]
+        result = subprocess.run(['zsh', str(ROOT / 'pick-project.sh'), *args],
                                 text=True, capture_output=True, env=env, timeout=5)
         calls = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
         return result, calls
@@ -159,6 +160,16 @@ class ScriptsTest(unittest.TestCase):
             result, calls = self.picker(fzf_status, find_status)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(calls, [])
+
+    def test_picker_explicit_roots_override_home(self):
+        root = self.home / 'custom'
+        root.mkdir()
+        project = root / 'project'
+        project.mkdir()
+        result, calls = self.picker(roots=[root])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('dir=' + str(project), calls[-1])
+        self.assertIn('name=~/custom/project', calls[-1])
 
     def test_picker_create_and_reuse(self):
         result, calls = self.picker()

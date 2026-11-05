@@ -36,12 +36,7 @@ roots=()
 if (( $# )); then
     roots=("$@")
 else
-    for root in "$HOME/Projects/personal" "$HOME/Projects/work"; do
-        [[ -d "$root" ]] && roots+=("$root")
-    done
-    if (( ${#roots} == 0 )) && [[ -d "$HOME/projects" ]]; then
-        roots=("$HOME/projects")
-    fi
+    roots=("$HOME")
 fi
 if (( ${#roots} == 0 )); then
     print -u2 'No project roots found. Pass project folders to pick-project.sh.'
