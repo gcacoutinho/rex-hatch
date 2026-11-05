@@ -11,17 +11,67 @@ Create a [Rex](https://www.superlogical.com/rex) session from a per-repo layout 
 
 ## Install
 
-Requires `rex`, `zsh`, and `jq`. Install `fzf` for fuzzy project selection; without it, Hatch uses the native macOS folder dialog (Finder).
+Requires `rex`, `zsh`, and `jq`. Install `fzf` for fuzzy project selection; without it, Hatch uses the native macOS folder dialog (Finder). All methods install into `~/.config/rex/`.
+
+### 1. Install from source (curl)
+
+Download and run the installer (requires `curl`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/gcacoutinho/rex-hatch/main/install.sh -o /tmp/rex-hatch-install.sh
+# Review the script before running it.
+sh /tmp/rex-hatch-install.sh
+rex config reload
+```
+
+This downloads the source files from the repository's `main` branch and installs **copies**. Run it again to update the scripts.
+
+### 2. Install from a repository checkout (symlinks)
+
+```sh
+git clone https://github.com/gcacoutinho/rex-hatch.git
+cd rex-hatch
+sh install-local.sh
+rex config reload
+```
+
+This **symlinks** the builder, picker, session helper, and action into your Rex folder. Keep the checkout in place; edits and `git pull` update the installed scripts. Reload the config after changing the action.
+
+Both installers **copy** the default egg only if `~/.config/rex/.rex-egg.lua` is absent, preserving any existing layout. They register the action in `init.lua` without replacing your config, skip an already-present registration line, and run `rex config check` when Rex is available.
+
+### 3. Install manually
+
+Copy these files from the repository:
+
+| Source | Destination |
+| --- | --- |
+| `hatch.lua` | `~/.config/rex/hatch.lua` |
+| `pick-project.sh` | `~/.config/rex/pick-project.sh` |
+| `select-session.sh` | `~/.config/rex/select-session.sh` |
+| `init-snippet.lua` | `~/.config/rex/hatch-picker.lua` |
+| `default.rex-egg.lua` | `~/.config/rex/.rex-egg.lua` (only if absent) |
+
+Create the destination directory first, and make both shell scripts executable:
 
 ```sh
 mkdir -p ~/.config/rex
-cp hatch.lua pick-project.sh select-session.sh ~/.config/rex/
-# Install once; preserve an existing customized default layout.
-[ -e ~/.config/rex/.rex-egg.lua ] || cp default.rex-egg.lua ~/.config/rex/.rex-egg.lua
 chmod +x ~/.config/rex/pick-project.sh ~/.config/rex/select-session.sh
 ```
 
-Paste `init-snippet.lua` into `~/.config/rex/init.lua`, then run `rex config check` and `rex config reload`.
+Add this once to `~/.config/rex/init.lua` (create it if necessary):
+
+```lua
+dofile(os.getenv("HOME") .. "/.config/rex/hatch-picker.lua")
+```
+
+Alternatively, paste the contents of `init-snippet.lua` into `init.lua` instead of loading `hatch-picker.lua`. Do not register the action both ways.
+
+Then validate and reload:
+
+```sh
+rex config check
+rex config reload
+```
 
 ## Usage
 
