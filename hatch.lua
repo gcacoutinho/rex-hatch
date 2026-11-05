@@ -74,7 +74,10 @@ local function build(node, block, sid, root)
   build(kids[2], res.block_ids[1], sid, root)
 end
 
-local root = (rex.args.dir or "."):gsub("/+$", "")
+local root = rex.args.dir or "."
+if root == "" then error("dir must not be empty", 0) end
+root = root:gsub("/+$", "")
+if root == "" then root = "/" end
 if root:sub(1, 1) ~= "/" then root = os.getenv("PWD") .. "/" .. root end
 
 local cfg = {}
@@ -92,8 +95,65 @@ if handle then
   cfg = chunk() or {}
 end
 
-local name = rex.args.name or cfg.name or root:match("[^/]+$")
-local wins = cfg.windows or {}
+-- Validate the entire layout before creating any sessions or panes.
+local function require_type(value, expected, path)
+  if type(value) ~= expected then error(path .. " must be a " .. expected, 0) end
+end
+
+local function optional_string(value, path)
+  if value ~= nil then require_type(value, "string", path) end
+end
+
+local function array_length(value, path)
+  require_type(value, "table", path)
+  local n = 0
+  for key in pairs(value) do
+    if type(key) ~= "number" or key < 1 or key % 1 ~= 0 then
+      error(path .. " must be an array", 0)
+    end
+    n = n + 1
+  end
+  for i = 1, n do
+    if value[i] == nil then error(path .. " must not contain holes", 0) end
+  end
+  return n
+end
+
+local visiting = {}
+local function validate_node(node, path)
+  require_type(node, "table", path)
+  if visiting[node] then error(path .. " contains a cycle", 0) end
+  visiting[node] = true
+  optional_string(node.name, path .. ".name")
+  optional_string(node.cmd, path .. ".cmd")
+  optional_string(node.cwd, path .. ".cwd")
+  if node.panes ~= nil then
+    if array_length(node.panes, path .. ".panes") ~= 2 then
+      error(path .. ".panes must have exactly 2 nodes", 0)
+    end
+    if node.split ~= nil and node.split ~= "right" and node.split ~= "below"
+        and node.split ~= "left" and node.split ~= "above" then
+      error(path .. ".split must be right, below, left, or above", 0)
+    end
+    if node.ratio ~= nil then
+      require_type(node.ratio, "number", path .. ".ratio")
+      if not (node.ratio >= 1 and node.ratio <= 99) then
+        error(path .. ".ratio must be between 1 and 99", 0)
+      end
+    end
+    for i = 1, 2 do validate_node(node.panes[i], path .. ".panes[" .. i .. "]") end
+  end
+  visiting[node] = nil
+end
+
+require_type(cfg, "table", "layout")
+optional_string(cfg.name, "layout.name")
+local name = rex.args.name or cfg.name or root:match("[^/]+$") or "/"
+optional_string(name, "session name")
+local wins = cfg.windows
+if wins == nil then wins = {} end
+local count = array_length(wins, "layout.windows")
+for i = 1, count do validate_node(wins[i], "layout.windows[" .. i .. "]") end
 local sid
 
 if #wins == 0 then
@@ -112,7 +172,7 @@ else
   end
 end
 
--- unverified: switch the app to the new session, on its first window
-rex.exec({ "rex", "focus", "-s", sid, "1" })
-rex.exec({ "rex", "do", "session.select", "session_id=" .. sid })
+-- Switch the app to the new session, on its first window.
+rex_cli({ "focus", "-s", sid, "1" })
+rex_cli({ "do", "session.select", "session_id=" .. sid })
 return sid
