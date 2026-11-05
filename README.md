@@ -4,6 +4,7 @@ Create a [Rex](https://www.superlogical.com/rex) session from a per-repo layout 
 
 - `hatch.lua`: the builder. `rex do hatch.lua dir=DIR` (optional `name=LABEL`).
 - `.rex-egg.lua` in a repo: returns the session layout (see `example/`, schema in the header of `hatch.lua`).
+- `~/.config/rex/.rex-egg.lua`: fallback layout when the project has no layout file. `default.rex-egg.lua` provides a single shell tab; customize it to set your default.
 - `pick-project.sh`: fzf picker; reuses the selected project's session or hatches a new one.
 - `select-session.sh`: switches to the selected session.
 - `init-snippet.lua`: adds **Hatch Project…** to the palette. Optionally bind with `rex.bind(KEY, "hatch_session_in")`.
@@ -15,6 +16,8 @@ Requires `rex`, `zsh`, and `jq`. Install `fzf` for fuzzy project selection; with
 ```sh
 mkdir -p ~/.config/rex
 cp hatch.lua pick-project.sh select-session.sh ~/.config/rex/
+# Install once; preserve an existing customized default layout.
+[ -e ~/.config/rex/.rex-egg.lua ] || cp default.rex-egg.lua ~/.config/rex/.rex-egg.lua
 chmod +x ~/.config/rex/pick-project.sh ~/.config/rex/select-session.sh
 ```
 

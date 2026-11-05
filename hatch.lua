@@ -1,5 +1,6 @@
 -- rex do ~/.config/rex/hatch.lua dir=DIR
--- Create a Rex session in DIR, laid out per DIR/.rex-egg.lua, which returns:
+-- Create a Rex session using DIR/.rex-egg.lua, falling back to
+-- ~/.config/rex/.rex-egg.lua when absent. The layout file returns:
 --
 --   return {
 --     name = "myrepo",                    -- session label (default: dir name)
@@ -78,7 +79,13 @@ if root:sub(1, 1) ~= "/" then root = os.getenv("PWD") .. "/" .. root end
 
 local cfg = {}
 local file = root .. "/.rex-egg.lua"
-if io.open(file, "r") then
+local handle = io.open(file, "r")
+if not handle then
+  file = os.getenv("HOME") .. "/.config/rex/.rex-egg.lua"
+  handle = io.open(file, "r")
+end
+if handle then
+  handle:close()
   local chunk, err = loadfile(file)
   if not chunk then error(err, 0) end
   setfenv(chunk, {}) -- config is data only: no rex, io, os
