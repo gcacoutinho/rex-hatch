@@ -1,14 +1,21 @@
--- Add to ~/.config/rex/init.lua, with hatch.lua at ~/.config/rex/hatch.lua
--- osascript blocks past the 30s action limit, so the whole flow runs detached
+-- Install hatch.lua, pick-project.sh and select-session.sh in ~/.config/rex/.
+-- fzf needs a TTY: launch it in a floating terminal pane.
 rex.action({
   name = "hatch_session_in",
-  title = "Hatch Session in Folder…",
+  title = "Hatch Project…",
   category = "Sessions",
   run = function()
-    rex.exec.start({ "sh", "-c", [[
-      dir=$(osascript -e 'POSIX path of (choose folder with prompt "Hatch Rex session in:" default location (path to home folder))') || exit 0
-      dir=${dir%/}
-      rex do "$HOME/.config/rex/hatch.lua" dir="$dir"
-    ]] }, { detach = true })
+    local result, err = rex.session.new_layer({
+      bounds = { 0.15, 0.15, 0.7, 0.7 },
+      focus = true,
+      layout = rex.layout.block({
+        flavor = "com.superlogical.terminal.shell",
+        options = {
+          command = { "/bin/zsh", os.getenv("HOME") .. "/.config/rex/pick-project.sh" },
+        },
+      }),
+    })
+    if not result then error(err or "Failed to open project picker", 0) end
+    return result
   end,
 })

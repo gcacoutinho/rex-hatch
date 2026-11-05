@@ -85,7 +85,7 @@ if io.open(file, "r") then
   cfg = chunk() or {}
 end
 
-local name = cfg.name or root:match("[^/]+$")
+local name = rex.args.name or cfg.name or root:match("[^/]+$")
 local wins = cfg.windows or {}
 local sid
 
